@@ -6,6 +6,7 @@ import com.example.sessionauth.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -21,6 +22,9 @@ public class AuthController {
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
+
+    @Value("${INSTANCE_ID:local}")
+    private String instanceId;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(
@@ -52,7 +56,8 @@ public class AuthController {
 
         return ResponseEntity.ok(Map.of(
                 "username", session.getAttribute("USER"),
-                "role", session.getAttribute("ROLE")
+                "role", session.getAttribute("ROLE"),
+                "instanceId", instanceId
         ));
     }
 
