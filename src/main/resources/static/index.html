@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Auth 테스트</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 480px; margin: 40px auto; padding: 0 16px; }
+        h1 { font-size: 1.3rem; }
+        label { display: block; margin: 8px 0 4px; font-size: 0.9rem; }
+        input { width: 100%; padding: 8px; box-sizing: border-box; }
+        .buttons { display: flex; gap: 8px; margin: 16px 0; }
+        button { flex: 1; padding: 10px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 12px; border-radius: 6px; white-space: pre-wrap;
+              word-break: break-all; min-height: 60px; }
+        .status { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Session Auth 테스트</h1>
+
+    <label for="username">아이디</label>
+    <input id="username" value="alice">
+
+    <label for="password">비밀번호</label>
+    <input id="password" type="password" value="password123">
+
+    <div class="buttons">
+        <button onclick="login()">로그인</button>
+        <button onclick="me()">내 정보 (/me)</button>
+        <button onclick="logout()">로그아웃</button>
+    </div>
+
+    <pre id="output">여기에 응답이 표시됩니다.</pre>
+
+    <script>
+        const output = document.getElementById('output');
+
+        // 공통: 응답 상태코드 + 본문을 화면에 예쁘게 찍는다.
+        async function show(promise) {
+            try {
+                const res = await promise;
+                const body = await res.json();
+                output.innerHTML =
+                    '<span class="status">HTTP ' + res.status + '</span>\n' +
+                    JSON.stringify(body, null, 2);
+            } catch (e) {
+                output.textContent = '에러: ' + e;
+            }
+        }
+
+        // 로그인: 입력값을 JSON으로 POST. 성공 시 브라우저가 SID 쿠키를 자동 저장.
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            show(fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            }));
+        }
+
+        // 내 정보: 쿠키(SID)는 브라우저가 자동으로 붙여 보냄. 로그인 안 했으면 401.
+        function me() {
+            show(fetch('/me'));
+        }
+
+        // 로그아웃: 서버가 세션을 즉시 무효화. 이후 /me는 다시 401.
+        function logout() {
+            show(fetch('/logout', { method: 'POST' }));
+        }
+    </script>
+</body>
+</html>
