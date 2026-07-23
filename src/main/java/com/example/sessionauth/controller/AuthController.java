@@ -71,4 +71,9 @@ public class AuthController {
 
         return ResponseEntity.ok(Map.of("message", "logout success"));
     }
+
+    @GetMapping("/health")
+    public ResponseEntity<?> health() {
+        return ResponseEntity.ok(Map.of("status", "UP"));
+    }
 }
