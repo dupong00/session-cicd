@@ -55,4 +55,15 @@ public class AuthController {
                 "role", session.getAttribute("ROLE")
         ));
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request){
+        HttpSession session = request.getSession(false);
+
+        if (session != null) {
+            session.invalidate();
+        }
+
+        return ResponseEntity.ok(Map.of("message", "logout success"));
+    }
 }
