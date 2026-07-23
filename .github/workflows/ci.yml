@@ -22,3 +22,27 @@ jobs:
       
       - name: 빌드 테스트
         run: ./gradlew build
+
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - name: 소스 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 스택 기동
+        run: docker compose up -d --build
+
+      - name: 스택 준비될 때까지 헬스체크
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/health; then
+              echo "준비됨"; exit 0
+            fi
+            echo "대기 중 ... ($i)"; sleep 2
+          done
+          echo "스택이 안 떴음"; exit 1
+      
+      - name: 정리
+        if: always()
+        run: docker compose down
