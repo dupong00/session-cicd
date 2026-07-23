@@ -14,3 +14,7 @@ target/
 out/
 dist/
 node_modules/
+
+# Gradle 빌드 캐시 / IDE 설정
+.gradle/
+.idea/
