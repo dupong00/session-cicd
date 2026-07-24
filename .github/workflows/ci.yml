@@ -43,6 +43,33 @@ jobs:
           done
           echo "스택이 안 떴음"; exit 1
       
+      - name: 세션 공유 검증 (로그인 -> /me -> 로그아웃)
+        run: |
+          curl -s -c cookie.txt -X POST http://localhost:8080/login \
+            -H 'Content-Type: application/json' \
+            -d '{"username":"alice","password":"password123"}'
+
+          for i in $(seq 1 6); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" -b cookie.txt http://localhost:8080/me)
+            echo "요청 $i → $code"
+            if [ "$code" != "200" ]; then
+              echo "세션 공유 실패! (다른 인스턴스가 세션을 못 찾음)"; exit 1
+            fi
+          done
+          echo "세션 공유 OK"
+
+          curl -s -b cookie.txt -X POST http://localhost:8080/logout
+
+          code=$(curl -s -o /dev/null -w "%{http_code}" -b cookie.txt http://localhost:8080/me)
+          echo "로그아웃 후 /me -> $code"
+          if [ "$code" != "401" ]; then
+            echo "로그아웃했는데 세션 살아있음"; exit 1
+          fi
+
+      - name: 실패 시 컨테이너 로그
+        if: failure()
+        run: docker compose logs
+
       - name: 정리
         if: always()
         run: docker compose down
