@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: 스택 기동
-        run: docker compose up -d --build
+        run: docker compose up -d --build --wait
 
       - name: 스택 준비될 때까지 헬스체크
         run: |
