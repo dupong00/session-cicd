@@ -45,12 +45,19 @@ jobs:
       
       - name: 세션 공유 검증 (로그인 -> /me -> 로그아웃)
         run: |
-          curl -s -c cookie.txt -X POST http://localhost:8080/login \
+          TOKEN=$(curl -si -X POST http://localhost:8080/login \
             -H 'Content-Type: application/json' \
-            -d '{"username":"alice","password":"password123"}'
+            -d '{"username":"alice","password":"password123"}' \
+            | grep -i '^x-auth-token:' | awk '{print $2}' | tr -d '\r')
+
+          if [ -z "$TOKEN" ]; then
+            echo "로그인 응답에 X-Auth-Token 헤더가 없음"; exit 1
+          fi
+          echo "토큰 발급됨: $TOKEN"
 
           for i in $(seq 1 6); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" -b cookie.txt http://localhost:8080/me)
+            code=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "X-Auth-Token: $TOKEN" http://localhost:8080/me)
             echo "요청 $i → $code"
             if [ "$code" != "200" ]; then
               echo "세션 공유 실패! (다른 인스턴스가 세션을 못 찾음)"; exit 1
@@ -58,9 +65,10 @@ jobs:
           done
           echo "세션 공유 OK"
 
-          curl -s -b cookie.txt -X POST http://localhost:8080/logout
+          curl -s -H "X-Auth-Token: $TOKEN" -X POST http://localhost:8080/logout
 
-          code=$(curl -s -o /dev/null -w "%{http_code}" -b cookie.txt http://localhost:8080/me)
+          code=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "X-Auth-Token: $TOKEN" http://localhost:8080/me)
           echo "로그아웃 후 /me -> $code"
           if [ "$code" != "401" ]; then
             echo "로그아웃했는데 세션 살아있음"; exit 1

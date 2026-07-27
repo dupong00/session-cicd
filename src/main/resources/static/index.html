@@ -14,6 +14,8 @@
         pre { background: #f4f4f4; padding: 12px; border-radius: 6px; white-space: pre-wrap;
               word-break: break-all; min-height: 60px; }
         .status { font-weight: bold; }
+        .token { font-size: 0.85rem; color: #555; }
+        .token code { background: #f4f4f4; padding: 2px 4px; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -31,10 +33,30 @@
         <button onclick="logout()">로그아웃</button>
     </div>
 
+    <p class="token">보관 중인 토큰: <code id="tokenView">(없음)</code></p>
+
     <pre id="output">여기에 응답이 표시됩니다.</pre>
 
     <script>
         const output = document.getElementById('output');
+        const tokenView = document.getElementById('tokenView');
+
+        // 세션 ID를 쿠키가 아니라 이 변수에 들고 있는다.
+        // 앱 클라이언트(iOS/Android)에는 쿠키 저장소가 없으므로 서버가
+        // HeaderHttpSessionIdResolver 로 X-Auth-Token 헤더를 쓰도록 설정돼 있다.
+        // 실제 앱에서는 여기가 Keychain / EncryptedSharedPreferences 자리다.
+        let token = null;
+
+        function setToken(value) {
+            token = value;
+            tokenView.textContent = token || '(없음)';
+        }
+
+        // 토큰이 있으면 X-Auth-Token 헤더로 붙인다. 브라우저가 자동으로 해주지 않으므로
+        // 요청마다 직접 넣어야 한다. (쿠키 방식과의 결정적 차이)
+        function authHeader() {
+            return token ? { 'X-Auth-Token': token } : {};
+        }
 
         // 공통: 응답 상태코드 + 본문을 화면에 예쁘게 찍는다.
         async function show(promise) {
@@ -44,30 +66,43 @@
                 output.innerHTML =
                     '<span class="status">HTTP ' + res.status + '</span>\n' +
                     JSON.stringify(body, null, 2);
+                return res;
             } catch (e) {
                 output.textContent = '에러: ' + e;
+                return null;
             }
         }
 
-        // 로그인: 입력값을 JSON으로 POST. 성공 시 브라우저가 SID 쿠키를 자동 저장.
-        function login() {
+        // 로그인: 성공하면 서버가 응답 헤더 X-Auth-Token 으로 세션 ID를 내려준다.
+        // 같은 오리진이라 JS가 응답 헤더를 그냥 읽을 수 있다.
+        // (다른 오리진이면 서버가 Access-Control-Expose-Headers 로 열어줘야 읽힌다)
+        async function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            show(fetch('/login', {
+
+            const res = await show(fetch('/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
             }));
+
+            if (res && res.ok) {
+                setToken(res.headers.get('X-Auth-Token'));
+            }
         }
 
-        // 내 정보: 쿠키(SID)는 브라우저가 자동으로 붙여 보냄. 로그인 안 했으면 401.
+        // 내 정보: 저장해둔 토큰을 헤더에 실어 보낸다. 토큰이 없거나 틀리면 401.
         function me() {
-            show(fetch('/me'));
+            show(fetch('/me', { headers: authHeader() }));
         }
 
-        // 로그아웃: 서버가 세션을 즉시 무효화. 이후 /me는 다시 401.
-        function logout() {
-            show(fetch('/logout', { method: 'POST' }));
+        // 로그아웃: 서버가 Redis에서 세션을 지운다. 손에 든 토큰은 이제 무효라 같이 버린다.
+        async function logout() {
+            await show(fetch('/logout', {
+                method: 'POST',
+                headers: authHeader()
+            }));
+            setToken(null);
         }
     </script>
 </body>
