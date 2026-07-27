@@ -48,6 +48,8 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<?> me(HttpServletRequest request){
         HttpSession session = request.getSession(false);
+        // servelet을 바로 받는 경우는 드뭄 다른방법 알아보기
+        // arguments resolver, filter, interceptor, aop
 
         if (session == null || session.getAttribute("USER") == null){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
