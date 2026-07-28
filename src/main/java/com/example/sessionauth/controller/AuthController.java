@@ -1,6 +1,8 @@
 package com.example.sessionauth.controller;
 
+import com.example.sessionauth.annotation.LoginUser;
 import com.example.sessionauth.domain.LoginRequest;
+import com.example.sessionauth.domain.SessionUser;
 import com.example.sessionauth.domain.User;
 import com.example.sessionauth.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -46,19 +48,13 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> me(HttpServletRequest request){
-        HttpSession session = request.getSession(false);
+    public ResponseEntity<?> me(@LoginUser SessionUser user){
         // servelet을 바로 받는 경우는 드뭄 다른방법 알아보기
         // arguments resolver, filter, interceptor, aop
 
-        if (session == null || session.getAttribute("USER") == null){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "not authenticated"));
-        }
-
         return ResponseEntity.ok(Map.of(
-                "username", session.getAttribute("USER"),
-                "role", session.getAttribute("ROLE"),
+                "username", user.username(),
+                "role", user.role(),
                 "instanceId", instanceId
         ));
     }
