@@ -2,6 +2,7 @@ package com.example.sessionauth.interceptor;
 
 import com.example.sessionauth.annotation.LoginRequired;
 import com.example.sessionauth.domain.SessionUser;
+import com.example.sessionauth.exception.UnauthorizedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -24,8 +25,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 
 
         if (session == null || session.getAttribute("USER") == null) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return false;
+            throw new UnauthorizedException("not authenticated");
         }
         else {
             String username = (String) session.getAttribute("USER");
