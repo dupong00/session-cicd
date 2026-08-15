@@ -1,11 +1,10 @@
 package com.example.sessionauth.controller;
 
+import com.example.sessionauth.auth.LoginRequired;
 import com.example.sessionauth.domain.LoginRequest;
 import com.example.sessionauth.domain.User;
 import com.example.sessionauth.service.AuthService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.sessionauth.session.LoginSessionStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,19 +17,20 @@ import java.util.Map;
 
 @Controller
 public class AuthController {
-    private AuthService authService;
-    public AuthController(AuthService authService) {
+    private final AuthService authService;
+    private final LoginSessionStore loginSessionStore;
+
+    public AuthController(AuthService authService, LoginSessionStore loginSessionStore) {
         this.authService = authService;
+        this.loginSessionStore = loginSessionStore;
     }
 
     @Value("${INSTANCE_ID:local}")
     private String instanceId;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(
-            @RequestBody LoginRequest req,
-            HttpServletRequest request
-    ){
+    public ResponseEntity<?> login(@RequestBody LoginRequest req){
+
         User user = authService.authenticate(req.username(), req.password());
 
         if (user == null){
@@ -38,39 +38,27 @@ public class AuthController {
                     .body(Map.of("error", "Invalid username or password"));
         }
 
-        HttpSession session = request.getSession(true);
-        session.setAttribute("USER", user.getUsername());
-        session.setAttribute("ROLE", user.getRole());
+        loginSessionStore.create(user);
 
         return ResponseEntity.ok(Map.of("message", "login success", "username", user.getUsername()));
     }
 
+    @LoginRequired
     @GetMapping("/me")
-    public ResponseEntity<?> me(HttpServletRequest request){
-        HttpSession session = request.getSession(false);
-        // servelet을 바로 받는 경우는 드뭄 다른방법 알아보기
-        // arguments resolver, filter, interceptor, aop
-
-        if (session == null || session.getAttribute("USER") == null){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "not authenticated"));
-        }
-
-        return ResponseEntity.ok(Map.of(
-                "username", session.getAttribute("USER"),
-                "role", session.getAttribute("ROLE"),
-                "instanceId", instanceId
-        ));
+    public ResponseEntity<?> me(){
+        return loginSessionStore.current()
+                .map(u -> ResponseEntity.ok((Object) Map.of(
+                        "username", u.username(),
+                        "role", u.role(),
+                        "instanceId", instanceId)))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "not authenticated")));
     }
 
+    @LoginRequired
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request){
-        HttpSession session = request.getSession(false);
-
-        if (session != null) {
-            session.invalidate();
-        }
-
+    public ResponseEntity<?> logout(){
+        loginSessionStore.invalidate();
         return ResponseEntity.ok(Map.of("message", "logout success"));
     }
 
