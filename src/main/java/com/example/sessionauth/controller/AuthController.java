@@ -1,7 +1,10 @@
 package com.example.sessionauth.controller;
 
 import com.example.sessionauth.auth.LoginRequired;
+import com.example.sessionauth.auth.LoginUser;
 import com.example.sessionauth.domain.LoginRequest;
+import com.example.sessionauth.domain.MeResponse;
+import com.example.sessionauth.domain.SessionUser;
 import com.example.sessionauth.domain.User;
 import com.example.sessionauth.service.AuthService;
 import com.example.sessionauth.session.LoginSessionStore;
@@ -45,14 +48,8 @@ public class AuthController {
 
     @LoginRequired
     @GetMapping("/me")
-    public ResponseEntity<?> me(){
-        return loginSessionStore.current()
-                .map(u -> ResponseEntity.ok((Object) Map.of(
-                        "username", u.username(),
-                        "role", u.role(),
-                        "instanceId", instanceId)))
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "not authenticated")));
+    public ResponseEntity<MeResponse> me(@LoginUser SessionUser user){
+        return ResponseEntity.ok(new MeResponse(user.username(), user.role(), instanceId));
     }
 
     @LoginRequired
