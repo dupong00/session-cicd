@@ -1,0 +1,106 @@
+services:
+  redis-node-1:
+    image: redis:7-alpine
+    command: ["redis-server", "/etc/redis/redis.conf"]
+    volumes:
+      - ./redis-cluster.conf:/etc/redis/redis.conf:ro
+    networks:
+      cluster-net:
+        ipv4_address: 172.30.0.11
+
+  redis-node-2:
+    image: redis:7-alpine
+    command: [ "redis-server", "/etc/redis/redis.conf" ]
+    volumes:
+      - ./redis-cluster.conf:/etc/redis/redis.conf:ro
+    networks:
+      cluster-net:
+        ipv4_address: 172.30.0.12
+
+  redis-node-3:
+    image: redis:7-alpine
+    command: [ "redis-server", "/etc/redis/redis.conf" ]
+    volumes:
+      - ./redis-cluster.conf:/etc/redis/redis.conf:ro
+    networks:
+      cluster-net:
+        ipv4_address: 172.30.0.13
+
+  redis-node-4:
+    image: redis:7-alpine
+    command: [ "redis-server", "/etc/redis/redis.conf" ]
+    volumes:
+      - ./redis-cluster.conf:/etc/redis/redis.conf:ro
+    networks:
+      cluster-net:
+        ipv4_address: 172.30.0.14
+
+  redis-node-5:
+    image: redis:7-alpine
+    command: [ "redis-server", "/etc/redis/redis.conf" ]
+    volumes:
+      - ./redis-cluster.conf:/etc/redis/redis.conf:ro
+    networks:
+      cluster-net:
+        ipv4_address: 172.30.0.15
+
+  redis-node-6:
+    image: redis:7-alpine
+    command: [ "redis-server", "/etc/redis/redis.conf" ]
+    volumes:
+      - ./redis-cluster.conf:/etc/redis/redis.conf:ro
+    networks:
+      cluster-net:
+        ipv4_address: 172.30.0.16
+
+  app-1:
+    build: ..
+    environment:
+      - INSTANCE_ID=app-1
+      - SPRING_PROFILES_ACTIVE=cluster
+    expose:
+      - "8080"
+    networks:
+      - cluster-net
+    healthcheck:
+      test: [ "CMD", "bash", "-c", ": > /dev/tcp/127.0.0.1/8080" ]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+
+  app-2:
+    build: ..
+    environment:
+      - INSTANCE_ID=app-2
+      - SPRING_PROFILES_ACTIVE=cluster
+    expose:
+      - "8080"
+    networks:
+      - cluster-net
+    healthcheck:
+      test: [ "CMD", "bash", "-c", ": > /dev/tcp/127.0.0.1/8080" ]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - cluster-net
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+
+networks:
+  cluster-net:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
