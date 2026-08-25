@@ -9,6 +9,7 @@ dump.rdb
 docs/*
 !docs/evidence/
 !docs/evidence/**
+docs/evidence/README.md
 
 # 환경 변수 (배포 키, 세션 시크릿 등)
 .env
