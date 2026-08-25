@@ -5,8 +5,10 @@ data/
 *.log
 dump.rdb
 
-# 개인 정리용 문서
-docs/
+# 개인 정리용 문서 (실험 증거는 예외)
+docs/*
+!docs/evidence/
+!docs/evidence/**
 
 # 환경 변수 (배포 키, 세션 시크릿 등)
 .env

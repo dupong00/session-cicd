@@ -1,0 +1,10 @@
+redis-node-1-1  | 1:M 25 Aug 2026 01:03:43.099 * configEpoch set to 1 via CLUSTER SET-CONFIG-EPOCH
+redis-node-1-1  | 1:S 25 Aug 2026 01:34:47.810 * Before turning into a replica, using my own master parameters to synthesize a cached master: I may be able to synchronize with the new master with just a partial transfer.
+redis-node-1-1  | 1:M 25 Aug 2026 01:35:01.497 * Before turning into a replica, using my own master parameters to synthesize a cached master: I may be able to synchronize with the new master with just a partial transfer.
+redis-node-1-1  | 1:S 25 Aug 2026 01:35:01.499 * Before turning into a replica, using my own master parameters to synthesize a cached master: I may be able to synchronize with the new master with just a partial transfer.
+redis-node-1-1  | 1:M 25 Aug 2026 01:38:21.639 * Before turning into a replica, using my own master parameters to synthesize a cached master: I may be able to synchronize with the new master with just a partial transfer.
+redis-node-1-1  | 1:S 25 Aug 2026 01:38:21.639 * Before turning into a replica, using my own master parameters to synthesize a cached master: I may be able to synchronize with the new master with just a partial transfer.
+redis-node-1-1  | 1:S 25 Aug 2026 01:44:23.515 * Connection with master lost.
+redis-node-1-1  | 1:S 25 Aug 2026 01:44:31.482 * Starting a failover election for epoch 9.
+redis-node-1-1  | 1:S 25 Aug 2026 01:44:31.490 * Failover election won: I'm the new master.
+redis-node-1-1  | 1:S 25 Aug 2026 01:44:31.490 * configEpoch set to 9 after successful failover
